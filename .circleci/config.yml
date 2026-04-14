@@ -2,7 +2,12 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/openjdk:17.0
+      - image: cimg/openjdk:25.0  # Java Env
+      - image: cimg/postgres:16.0 # The database environment
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_DB: booking_db
+          POSTGRES_PASSWORD: password # pass
     steps:
       - checkout
       - run:
