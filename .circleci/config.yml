@@ -1,19 +1,42 @@
 version: 2.1
+
 jobs:
   build:
     docker:
-      - image: cimg/openjdk:25.0  # Java Env
-      - image: cimg/postgres:16.0 # The database environment
+      - image: cimg/openjdk:17.0   # ✅ stable Java
+      - image: cimg/postgres:16.0
         environment:
           POSTGRES_USER: postgres
           POSTGRES_DB: booking_db
-          POSTGRES_PASSWORD: password # pass
+          POSTGRES_PASSWORD: password
+
+    working_directory: ~/repo
+
     steps:
       - checkout
+
+      # ✅ Wait for Postgres to start
       - run:
-          name: Build and Run Tests
-          command: mvn clean test
+          name: Wait for Postgres
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && echo "Postgres is ready!" && exit 0
+              echo "Waiting for Postgres..."
+              sleep 2
+            done
+            echo "Postgres failed to start" && exit 1
+
+      # ✅ Run tests with explicit DB config
+      - run:
+          name: Build and Test
+          command: |
+            mvn clean test \
+            -Dspring.datasource.url=jdbc:postgresql://localhost:5432/booking_db \
+            -Dspring.datasource.username=postgres \
+            -Dspring.datasource.password=password
+
 workflows:
-  sample:
+  build_and_test:
     jobs:
       - build

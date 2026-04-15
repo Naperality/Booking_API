@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Entity
-@Table(name = "users") // "user" is a reserved keyword in Postgres, "users" avoids errors.
+@Table(name = "users")
 @Data
 public class User {
 
@@ -14,10 +14,16 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank(message = "Name is mandatory")
+    @NotBlank
     private String name;
 
-    @Email(message = "Email should be valid")
-    @NotBlank(message = "Email is mandatory")
+    @Email
+    @NotBlank
     private String email;
+
+    @NotBlank
+    private String password;
+
+    @Enumerated(EnumType.STRING)
+    private Role role;
 }

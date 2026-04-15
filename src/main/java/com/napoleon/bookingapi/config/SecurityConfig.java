@@ -1,28 +1,52 @@
 package com.napoleon.bookingapi.config;
 
+import com.napoleon.bookingapi.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.Customizer;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final JwtAuthenticationFilter jwtFilter;
+
+    public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
+        this.jwtFilter = jwtFilter;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // 1. Disable CSRF (Crucial for testing POST requests in Postman)
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health").permitAll() // Needed for CircleCI
+                .requestMatchers("/api/auth/**").permitAll()
+
+                // ADMIN only access
+                .requestMatchers("/api/users/**").hasRole("ADMIN")
+                // 🔥 BOOKING RULES (STRICT)
+                // 1. More specific paths first
+                .requestMatchers("/api/bookings/me").hasAnyRole("USER", "ADMIN")
+                // 2. The base path restricted to ADMIN only
+                .requestMatchers(HttpMethod.GET, "/api/bookings").hasRole("ADMIN")
+                // 3. Allow USERS to post new bookings
+                .requestMatchers(HttpMethod.POST, "/api/bookings").hasAnyRole("USER", "ADMIN")
                 .anyRequest().authenticated()
             )
-            .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
-            
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }
