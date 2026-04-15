@@ -23,6 +23,14 @@ public class BookingService {
 
     public Booking createBooking(String email, BookingRequest request) {
 
+        // Validate first so that it can see the data
+        if (request.startTime == null || request.endTime == null) {
+            throw new RuntimeException("Start time and end time are required");
+        }
+
+        if (request.startTime.isAfter(request.endTime)) {
+            throw new RuntimeException("Start time must be before end time");
+        }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
