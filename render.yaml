@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: Booking_API
+    name: booking-api
     runtime: java
     buildCommand: ./mvnw clean install -DskipTests
     startCommand: java -jar target/bookingapi-0.0.1-SNAPSHOT.jar
     envVars:
       - key: JAVA_VERSION
-        value: 17
+        value: 21 # Use 21 if your project is on Java 21
